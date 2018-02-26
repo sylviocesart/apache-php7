@@ -11,6 +11,13 @@ RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7 \
 
 
 RUN yum -y install \
+    gcc \
+    php-devel \
+    php-pear \
+    libssh2 \
+    libssh2-devel \
+    make \
+    openssh-clients \
     httpd \
     mod_ssl \
     php \
@@ -36,6 +43,16 @@ RUN ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime \
     && echo "NETWORKING=yes" > /etc/sysconfig/network
 
 #
+# Instalando a extensão ssh2 para o php
+#
+RUN pecl install -f ssh2
+
+#
+# Incluindo a extensão ao arquivo ssh2.ini
+#
+RUN extension=ssh2.so > /etc/php.d/ssh2.ini
+
+#
 # Global Apache configuration changes
 #
 RUN sed -i \
@@ -55,14 +72,37 @@ RUN sed -i \
 RUN echo '<?php phpinfo(); ?>' > /var/www/html/index.php
 
 #
+# Tuning no Apache pelo módulo mpm_prefork
+#
+RUN sed -i \
+    '/mod_cgi.so/a\   StartServers    10\n\
+   MinSpareServers    20\n\
+   MaxSpareServers    40\n\
+   MaxClients    20000\n\
+   MaxRequestsPerChild    450000' /etc/httpd/conf.modules.d/01-cgi.conf
+
+#
+# Tuning no arquivo /etc/security/limits.conf
+#
+RUN sed -i \
+    -e '$a\' -e '* soft nofile 4096\n\
+* hard nofile 10240' /etc/security/limits.conf
+
+
+#
+# Tuning do ulimits no /etc/profile
+#
+RUN sed -i \
+    -e '$a\' -e 'ulimit -n 8192' /etc/profile
+
+#
 # Copy files into place
 #
-#ADD 
+#ADD
 
 #
 # Purge
 #
-
 RUN rm -rf /var/cache/{ldconfig,yum}/*
 
 EXPOSE 80 443
