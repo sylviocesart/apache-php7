@@ -50,7 +50,7 @@ RUN pecl install -f ssh2
 #
 # Incluindo a extensão ao arquivo ssh2.ini
 #
-RUN extension=ssh2.so > /etc/php.d/ssh2.ini
+RUN echo "extension=ssh2.so" > /etc/php.d/ssh2.ini
 
 #
 # Global Apache configuration changes
